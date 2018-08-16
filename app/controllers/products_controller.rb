@@ -1,5 +1,5 @@
 class ProductsController < ApplicationController
-  before_action :find_product, only:[:edit, :update, :show, :destroy]
+  before_action :find_product, only:[:edit, :update, :show, :destroy, :remove_image]
 
   def index
     @products = Product.all
@@ -26,12 +26,22 @@ class ProductsController < ApplicationController
   end
 
   def edit
+    @images ={}
+    @product.images.each_with_index do |image, i|
+      @images[i] = {image_id: image.id,
+                    product_id: @product.id,
+                    image_name: image.avatar_file_name,
+                    image_type: image.avatar_content_type,
+                    image_size: image.avatar_file_size,
+                    image_url: image.avatar.url,
+                    id_of_image: image.id}
+    end
+    @images = @images.to_json
   end
 
   def update
     if @product.update(product_params)
       if params[:file].present?
-        @product.images.destroy_all
         params[:file] && params[:file].each do |f|
           @product.images.create(avatar: params[:file][f])
         end
@@ -45,6 +55,15 @@ class ProductsController < ApplicationController
   def destroy
     if @product.destroy
       redirect_to root_path
+    end
+  end
+
+  def remove_image
+    @image = @product.images.find(params[:image_id])
+    if @image.destroy
+      respond_to do |format|
+        format.js
+      end
     end
   end
 

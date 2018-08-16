@@ -1,5 +1,5 @@
 
-<%= form_for :myDropzoneForm, html: { id: 'dropzone-form-id'} do |f|%>
+<%= form_for @product, html: { id: 'dropzone-form-id'} do |f|%>
 	<%= f.label :name%>
 	<%= f.text_field :name%>
 	<br />
@@ -24,48 +24,130 @@
 
 
 <script type="text/javascript">
-  var AUTH_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-	Dropzone.options.filesField = {
-  method: 'post',
-  url: '/products',
-  addRemoveLinks: true,
-  autoProcessQueue: false,
-  parallelUploads: 12,
-  uploadMultiple: true,
-  maxFiles: 6,
-  params:{
-    'authenticity_token':  AUTH_TOKEN
-  },
-  // accept: function(file, done) {
-  //   $("div#files-field").css({"height": "auto"});
-  //   done();
-  // },
+  <% if @product.new_record?%>
+    var AUTH_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  	Dropzone.options.filesField = {
+    method: 'post',
+    url: '/products',
+    addRemoveLinks: true,
+    autoProcessQueue: false,
+    parallelUploads: 12,
+    uploadMultiple: true,
+    maxFiles: 6,
+    params:{
+      'authenticity_token':  AUTH_TOKEN
+    },
+    // accept: function(file, done) {
+    //   $("div#files-field").css({"height": "auto"});
+    //   done();
+    // },
 
-  init: function() {
-    var myDropzone = this;
+    init: function() {
+      var myDropzone = this;
 
-    var form = document.getElementById('dropzone-form-id');
-    form.addEventListener('submit', function(event) {
-      // stop the form's submit event
-      if(myDropzone.getQueuedFiles().length > 0){
-        event.preventDefault();
-        event.stopPropagation();
-        myDropzone.processQueue();
+      var form = document.getElementById('dropzone-form-id');
+      form.addEventListener('submit', function(event) {
+        // stop the form's submit event
+        if(myDropzone.getQueuedFiles().length > 0){
+          event.preventDefault();
+          event.stopPropagation();
+          myDropzone.processQueue();
+        }
+      });
+
+      myDropzone.on("sendingmultiple", function(file, xhr, formData) {
+        formData.append("name", $('#product_name').val());
+        formData.append("description", $('#product_description').val());
+      });
+      myDropzone.on("maxfilesexceeded", function(file)
+      {
+          // this.removeFile(file);
+      });
+    },
+    successmultiple: function(data,response) {
+      $('#dropzone-form-id').off('submit').submit();
+      window.location.href = '/products';
+    }
+  };
+  <% else %>
+    var AUTH_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    Dropzone.options.filesField = {
+    method: 'put',
+    url: '/products/<%=@product.id%>',
+    addRemoveLinks: true,
+    autoProcessQueue: false,
+    parallelUploads: 12,
+    uploadMultiple: true,
+    maxFiles: 6,
+    params:{
+      'authenticity_token':  AUTH_TOKEN
+    },
+    // accept: function(file, done) {
+    //   $("div#files-field").css({"height": "auto"});
+    //   done();
+    // },
+
+    init: function() {
+      var myDropzone = this;
+      var files = "<%= @images %>";
+      var file_name = JSON.parse(files.replace(/&quot;/g,'"'));
+      for (i = 0; i < Object.keys(file_name).length; i++) {
+        var mockFile = {
+           filename: file_name[i].image_name,
+           size: file_name[i].image_size,
+           type: file_name[i].image_type,
+           status: Dropzone.ADDED,
+           property_id: file_name[i].product_id,
+           image_id: file_name[i].image_id
+         };
+        myDropzone.emit("addedfile", mockFile);
+        myDropzone.emit("thumbnail", mockFile, file_name[i].image_url);
+        myDropzone.emit("complete", mockFile);
+        myDropzone.emit("success", mockFile);
+
+        myDropzone.files.push(mockFile)
       }
-    });
 
-    myDropzone.on("sendingmultiple", function(file, xhr, formData) {
-      formData.append("name", $('#myDropzoneForm_name').val());
-      formData.append("description", $('#myDropzoneForm_description').val());
-    });
-    myDropzone.on("maxfilesexceeded", function(file)
-    {
-        // this.removeFile(file);
-    });
-  },
-  successmultiple: function(data,response) {
-    $('#dropzone-form-id').off('submit').submit();
-    window.location.href = '/products';
-  }
-};
+
+      var form = document.getElementById('dropzone-form-id');
+      form.addEventListener('submit', function(event) {
+        // stop the form's submit event
+        if(myDropzone.getQueuedFiles().length > 0){
+          event.preventDefault();
+          event.stopPropagation();
+          myDropzone.processQueue();
+        }
+      });
+
+      myDropzone.on("sendingmultiple", function(file, xhr, formData) {
+        formData.append("name", $('#product_name').val());
+        formData.append("description", $('#product_description').val());
+      });
+      myDropzone.on("maxfilesexceeded", function(file)
+      {
+          // this.removeFile(file);
+      });
+    },
+    removedfile: function(file) {
+      var name = file.name;
+      if (file.property_id == undefined){}else{
+        var url = '/products/'+ file.property_id + '/remove_image'+'?image_id='+ file.image_id;
+        }
+        $.ajax({
+         type: 'GET',
+         url: url,
+         sucess: function(data){
+          console.log('success: ' + data);
+         }
+        });
+        var _ref;
+
+        return (_ref = file.previewElement) != null ? _ref.parentNode.removeChild(file.previewElement) : void 0;
+    },
+    successmultiple: function(data,response) {
+      $('#dropzone-form-id').off('submit').submit();
+      window.location.href = '/products';
+    }
+  };
+  <% end %>
 </script>
