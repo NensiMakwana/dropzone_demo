@@ -1,0 +1,71 @@
+
+<%= form_for :myDropzoneForm, html: { id: 'dropzone-form-id'} do |f|%>
+	<%= f.label :name%>
+	<%= f.text_field :name%>
+	<br />
+	<%= f.label :description%>
+	<%= f.text_field :description%>
+
+	<div id="files-field"
+       class="dropzone"
+       >
+    <div class="dz-message"
+         style="margin: 20px">
+      Drag your cats' pics here! Or
+      <button>
+        select files
+      </button>
+    </div>
+  </div>
+	<%= f.submit "Submit", id: 'submit' %>
+<% end %>
+
+
+
+
+<script type="text/javascript">
+  var AUTH_TOKEN = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+	Dropzone.options.filesField = {
+  method: 'post',
+  url: '/products',
+  addRemoveLinks: true,
+  autoProcessQueue: false,
+  parallelUploads: 12,
+  uploadMultiple: true,
+  maxFiles: 6,
+  params:{
+    'authenticity_token':  AUTH_TOKEN
+  },
+  // accept: function(file, done) {
+  //   $("div#files-field").css({"height": "auto"});
+  //   done();
+  // },
+
+  init: function() {
+    var myDropzone = this;
+
+    var form = document.getElementById('dropzone-form-id');
+    form.addEventListener('submit', function(event) {
+      // stop the form's submit event
+      if(myDropzone.getQueuedFiles().length > 0){
+        event.preventDefault();
+        event.stopPropagation();
+        myDropzone.processQueue();
+      }
+    });
+
+    myDropzone.on("sendingmultiple", function(file, xhr, formData) {
+      formData.append("name", $('#myDropzoneForm_name').val());
+      formData.append("description", $('#myDropzoneForm_description').val());
+    });
+    myDropzone.on("maxfilesexceeded", function(file)
+    {
+        // this.removeFile(file);
+    });
+  },
+  successmultiple: function(data,response) {
+    $('#dropzone-form-id').off('submit').submit();
+    window.location.href = '/products';
+  }
+};
+</script>

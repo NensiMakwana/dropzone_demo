@@ -1,0 +1,15 @@
+<%= link_to 'new', new_product_path%>
+<table border = '1'>
+	<tr>
+		<td>name</td>
+		<td>Desc</td>
+	</tr>
+<% @products.each do |p|%>
+	<tr>
+		<td><%= p.name%></td>
+		<td><%= p.description %></td>
+		<td><%= link_to 'show', product_path(p)%></td>
+		<td><%= link_to 'delete', product_path(p), method: :delete%></td>
+	</tr>
+<%end%>
+</table>

@@ -1,0 +1,8 @@
+<p> Product Name</p>
+<p><%= @product.name %></p>
+
+<p> Product Description</p>
+<p><%= @product.description %></p>
+<% @product.images && @product.images.each do |image| %>
+  <%= image_tag image.avatar.url , style: 'width: 250px;height: 200px;'%>
+<% end %>
